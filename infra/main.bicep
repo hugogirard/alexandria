@@ -15,6 +15,9 @@ param resourceGroupName string
 @description('The object ID of the user needed for the RBAC on the protected resources')
 param userObjectId string
 
+@description('The name of the project to create')
+param projectName string
+
 resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
   name: resourceGroupName
   location: location
@@ -22,7 +25,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-11-01' = {
 
 var suffix = uniqueString(rg.id)
 
-module aifoundry 'modules/aifoundry/foundry.bicep' = {
+module hub 'modules/aifoundry/foundry.bicep' = {
   scope: rg
   params: {
     location: location
@@ -30,23 +33,32 @@ module aifoundry 'modules/aifoundry/foundry.bicep' = {
   }
 }
 
+module project 'modules/aifoundry/project.bicep' = {
+  scope: rg
+  params: {
+    location: location
+    hubResourceId: hub.outputs.hubResourceId
+    projectName: projectName
+  }
+}
+
 module rbacFoundry 'modules/rbac/foundry.bicep' = {
   scope: rg
   params: {
-    aiSearchResourceId: aifoundry.outputs.searchResourceId
-    openAiSystemAssignedMIPrincipalId: aifoundry.outputs.openAiManagedIdentity
-    openaiResourceId: aifoundry.outputs.openaiResourceId
-    searchAiSystemAssignedMIPrincipalId: aifoundry.outputs.searchManagedIdentity
-    storageResourceId: aifoundry.outputs.storageResourceId
+    aiSearchResourceId: hub.outputs.searchResourceId
+    openAiSystemAssignedMIPrincipalId: hub.outputs.openAiManagedIdentity
+    openaiResourceId: hub.outputs.openaiResourceId
+    searchAiSystemAssignedMIPrincipalId: hub.outputs.searchManagedIdentity
+    storageResourceId: hub.outputs.storageResourceId
   }
 }
 
 module rbacUser 'modules/rbac/user.bicep' = {
   scope: rg
   params: {
-    aiSearchResourceId: aifoundry.outputs.searchResourceId
-    openaiResourceId: aifoundry.outputs.openaiResourceId
-    storageResourceId: aifoundry.outputs.storageResourceId
+    aiSearchResourceId: hub.outputs.searchResourceId
+    openaiResourceId: hub.outputs.openaiResourceId
+    storageResourceId: hub.outputs.storageResourceId
     userObjectId: userObjectId
   }
 }
