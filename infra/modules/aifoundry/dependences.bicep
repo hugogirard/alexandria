@@ -38,6 +38,7 @@ module containerRegistry 'br/public:avm/res/container-registry/registry:0.9.1' =
     location: location
     tags: tag
     publicNetworkAccess: 'Enabled'
+    exportPolicyStatus: 'enabled'
     acrAdminUserEnabled: false
     zoneRedundancy: 'Disabled'
   }
